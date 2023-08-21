@@ -259,7 +259,7 @@ class PostSMTPTestMail{
 	function sample_admin_notice__success(){
     if($this->client->isAccessTokenExpired()){
 	?>
-		<div class="notice notice-success is-dismissible">
+		<div class="notice notice-warning is-dismissible" style="height:10px">
 		Click Here For Authentication: <a href=<?php echo $this->url; ?>>Authenticate</a> 
 		</div>
 	<?php
