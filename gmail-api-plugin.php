@@ -35,8 +35,8 @@ class PostSMTPTestMail{
 		
 		
     	//initilize credentials
-        $this->client_id = "720395507644-h37glbogpr5ir4ujai43b2n4ut14qh1e.apps.googleusercontent.com";
-        $this->client_secret = "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";
+        $this->client_id = "";
+        $this->client_secret = "";
        	$this->redirect_uri= admin_url().'admin.php?page=postman%2Femail_test';
         $this->client = new PostSMTP\Vendor\Google\Client();
 
