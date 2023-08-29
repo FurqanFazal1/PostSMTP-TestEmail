@@ -19,7 +19,7 @@ class PostSMTPTestMail{
 	public $message_details=[];
 	public $gmail;
 	
-    function __construct(){
+    public function __construct(){
 		require_once WP_PLUGIN_DIR.'/post-smtp/Postman/Postman-Mail/PostmanMailEngine.php';
         include(dirname(__FILE__) . "/libs/vendor/autoload.php");
 		add_action('admin_enqueue_scripts', array($this,'Load_Scripts') );
@@ -28,11 +28,15 @@ class PostSMTPTestMail{
         add_action( 'wp_ajax_callingToFetchMessage', array($this,'callingToFetchMessage'));
 		add_action( 'wp_ajax_callingToSendMessage', array($this,'callingToSendMessage'));
 		add_action( 'wp_ajax_callingToReadMessage', array($this,'callingToReadMessage'));
-		add_action('admin_notices', array($this,'sample_admin_notice__success'));
+		
+		if(!get_option('AccessToken')){
+			add_action('admin_notices', array($this,'sample_admin_notice__success'));
+		}
+		
 		
     	//initilize credentials
-        $this->client_id = "1075588565443-d8nu7o0k430kqkdfmnuap9825606h53e.apps.googleusercontent.com";
-        $this->client_secret = "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";
+        $this->client_id = "720395507644-h37glbogpr5ir4ujai43b2n4ut14qh1e.apps.googleusercontent.com";
+        $this->client_secret = "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";
        	$this->redirect_uri= admin_url().'admin.php?page=postman%2Femail_test';
         $this->client = new PostSMTP\Vendor\Google\Client();
 
@@ -51,7 +55,7 @@ class PostSMTPTestMail{
 	}
 	
 	
-    function verifyToken(){
+	public function verifyToken(){
 		
         $accessToken=get_option('AccessToken');
         $refreshToken=get_option('RefreshToken');
@@ -82,7 +86,7 @@ class PostSMTPTestMail{
                    
 				else{
                        
-					update_option( 'AccessToken', $this->client->getAccessToken());
+					update_option( 'AccessToken', $token);
 					update_option('RefreshToken', $this->client->getRefreshToken());
 				}
 			}
@@ -91,7 +95,7 @@ class PostSMTPTestMail{
 	}
 	
 	//Fetching Unread Messages from Gmail
-	function fetchUnreadMessages(){
+	public function fetchUnreadMessages(){
 	
 			$search = "category:primary label:unread";
 			$params = array(
@@ -138,7 +142,7 @@ class PostSMTPTestMail{
 	}
 		
 		//Sending message to Mailtrap
-		function Send($message_details,$mId,$gmail){
+		public function Send($message_details,$mId,$gmail){
 			$to=get_option('admin_email');
 			$subject=$message_details['messageSubject'];
 			$body=$message_details['messageSnippet'];
@@ -178,7 +182,7 @@ class PostSMTPTestMail{
 		}
 	
 		//Set email to Mark As Read
-		function SetToMarkAsRead($mId,$gmail){
+		public function SetToMarkAsRead($mId,$gmail){
 		
 		
 			$mods= new PostSMTP\Vendor\Google\Service\Gmail\ModifyMessageRequest($this->client);
@@ -188,7 +192,7 @@ class PostSMTPTestMail{
 		}
 		
 	//Load scripts
-	function Load_Scripts(){
+	public function Load_Scripts(){
 
         wp_enqueue_script( 'java-script', plugins_url( '/gmail-api-plugin.js', __FILE__ ),array('jquery'),'1.0.0',true);
         wp_localize_script( 'java-script', 'ajax', array(
@@ -199,7 +203,7 @@ class PostSMTPTestMail{
     	}
 	
 	//Calling Function fetchUnreadMessages and send response to ajax
-	function callingToFetchMessage(){
+	public function callingToFetchMessage(){
 		if(!$this->client->isAccessTokenExpired()){
 			
  				$this->message_id=$this->fetchUnreadMessages();
@@ -219,7 +223,7 @@ class PostSMTPTestMail{
 		}
 	
 	//Calling Function Send and send response to ajax
-	function callingToSendMessage(){
+	public function callingToSendMessage(){
  			$whatever =  $_POST['MID'];
 			$this->resp=$this->Send($whatever['mdetails'],$whatever['mid'],$this->gmail);
 			
@@ -236,7 +240,7 @@ class PostSMTPTestMail{
 	}
 	
 	//Calling Function SetToMarkAsRead and send response to ajax
-	function callingToReadMessage(){
+	public function callingToReadMessage(){
 			
 			$whatever =  $_POST['MID'];
 			$mark=$this->SetToMarkAsRead($whatever['mid'],$this->gmail);
@@ -250,23 +254,22 @@ class PostSMTPTestMail{
 		
 
 	//Setup 
-    function testmailsetup(){
+    public function testmailsetup(){
         add_options_page( "Test Email Sending", "Test Email", 'manage_options', 'test-email-setup', array($this,'handleOutput'));
     }
 	
 	//Notice for Authentication of user
-	function sample_admin_notice__success(){
-    if($this->client->isAccessTokenExpired()){
+	public function sample_admin_notice__success(){
+   
 	?>
 		<div class="notice notice-warning is-dismissible" style="padding:10px">
 		Click Here For Authentication: <a href=<?php echo $this->url; ?>>Authenticate</a> 
 		</div>
 	<?php
-	 }   
 
 	}
    
-    function OurHTML(){
+    public function OurHTML(){
         
         ?>
         
@@ -289,5 +292,14 @@ add_action( 'admin_init', function() {
 	new PostSMTPTestMail();
 	
 }, 50 );
+
+//Deleting options from the table on deactivation
+function uninstall_deletion(){
+		delete_option('AccessToken');
+        delete_option('RefreshToken');
+}
+register_deactivation_hook(
+			__FILE__,
+'uninstall_deletion');
 
 ?>
